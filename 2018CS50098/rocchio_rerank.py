@@ -26,20 +26,27 @@ def rocchiorerank():
     infile = open(sys.argv[2],"r")
     top100 = infile.read().strip().split('\n')
     infile.close()
+    allreldocs = set()
     reldocs = [[] for x in allqueries]
     for row in top100:
         col =  row.strip().split()
         reldocs[int(col[0])-1].append(col[2])
+        allreldocs.add(col[2])
     # loading all documents
     infile = open(sys.argv[3]+"/metadata.csv","r")
     metadata = list(csv.DictReader(infile))
     infile.close()
     alldocs = {}
     vocabulary = {}
+    limit = 2000
     for row in metadata:
         docid = row['cord_uid']
-        if docid not in alldocs:
-            alldocs[docid] = {}
+        if docid not in allreldocs:
+            if limit > 0:
+                limit -= 1
+            else:
+                continue
+        alldocs[docid] = {}
         for header in ['title', 'abstract', 'authors']:
             for token in tokenized(row[header]):
                 if token not in alldocs[docid]:
@@ -73,6 +80,7 @@ def rocchiorerank():
             tf = (math.log(allqueries[i][token],2) + 1)/math.log(sum(allqueries[i].values()),2)
             queryvector[i].append()
     # ranking relevant documents
+    outfile = open(sys.argv[4],"w")
     for i in range(len(allqueries)):
         dr = np.array([0]*len(docvector.values()[0]))
         dn = np.array([0]*len(docvector.values()[0]))
@@ -90,9 +98,8 @@ def rocchiorerank():
             score = sum(qm * dv)/(math.sqrt(sum(qm * qm)) * math.sqrt(sum(dv * dv)))
             scores.append([score, docid])
         ranks = sorted(scores, reverse=True)
-        outfile = open(sys.argv[4],"w")
         for j in range(len(ranks)):
             outfile.write(f"{i} Q0 {ranks[j][1]} {j} {ranks[j][0]} runid{1}\n")
-        outfile.close()
+    outfile.close()
 
 rocchiorerank()
