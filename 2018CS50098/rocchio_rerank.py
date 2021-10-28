@@ -74,16 +74,16 @@ def rocchiorerank():
     for token in vocabulary:
         idf = math.log(1+(len(alldocs)/vocabulary[token]),2)
         for docid in alldocs:
-            tf = (math.log(alldocs[docid][token],2) + 1)/math.log(sum(alldocs[docid].values()),2)
+            tf = math.log(1+alldocs[docid].get(token,0),2)/(1+math.log(1+sum(alldocs[docid].values()),2))
             docvector[docid].append(tf*idf)
         for i in range(len(allqueries)):
-            tf = (math.log(allqueries[i][token],2) + 1)/math.log(sum(allqueries[i].values()),2)
-            queryvector[i].append()
+            tf = math.log(1+allqueries[i].get(token,0),2)/(1+math.log(1+sum(allqueries[i].values()),2))
+            queryvector[i].append(tf*idf)
     # ranking relevant documents
     outfile = open(sys.argv[4],"w")
     for i in range(len(allqueries)):
-        dr = np.array([0]*len(docvector.values()[0]))
-        dn = np.array([0]*len(docvector.values()[0]))
+        dr = np.array([0.0]*len(vocabulary))
+        dn = np.array([0.0]*len(vocabulary))
         for docid in docvector:
             if docid in reldocs[i]:
                 dr += docvector[docid]
@@ -91,7 +91,7 @@ def rocchiorerank():
                 dn += docvector[docid]
         dr = dr/len(reldocs[i])
         dn = dn/(len(docvector)-len(reldocs[i]))
-        qm = queryvector[i] + dr + dn
+        qm = 0.95 * np.array(queryvector[i]) + 0.7 * dr - 0.25 * dn
         scores = []
         for docid in reldocs[i]:
             dv = np.array(docvector[docid])
@@ -99,7 +99,7 @@ def rocchiorerank():
             scores.append([score, docid])
         ranks = sorted(scores, reverse=True)
         for j in range(len(ranks)):
-            outfile.write(f"{i} Q0 {ranks[j][1]} {j} {ranks[j][0]} runid{1}\n")
+            outfile.write(f"{i} Q0 {ranks[j][1]} {j+1} {ranks[j][0]} runid{1}\n")
     outfile.close()
 
 rocchiorerank()
