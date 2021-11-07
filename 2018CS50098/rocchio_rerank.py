@@ -30,7 +30,7 @@ def rocchiorerank():
     reldocs = [[] for x in allqueries]
     for row in top100:
         col =  row.strip().split()
-        reldocs[int(col[0])-1].append(col[2])
+        reldocs[int(col[0])-int(topics.find('topic')['number'])].append(col[2])
         allreldocs.add(col[2])
     # loading all documents
     infile = open(sys.argv[3]+"/metadata.csv","r")
